@@ -1,5 +1,3 @@
-
-
 //***************************
 // Fix for min/max macro conflict with algorithm library
 // Needs to be included first, then game engine (PGE uses std::min/max)
@@ -54,6 +52,15 @@ bool InRect(const olc::vf2d& particle, const olc::vf2d& start, const olc::vf2d& 
 	return (Between(particle.x, start.x, x2) && Between(particle.y, start.y, y2));
 }
 
+bool InRect(const olc::vf2d& particle, const Rect& rect)
+{
+	using util::Between;
+	float x2 = rect.x + rect.w;
+	float y2 = rect.y + rect.h;
+	return (Between(particle.x, rect.x, x2) && Between(particle.y, rect.y, y2));
+}
+
+
 class MemoryManager : public olc::PixelGameEngine
 {
 public:
@@ -63,23 +70,6 @@ public:
 	}
 
 public:
-	bool OnUserCreate() override
-	{
-		swf = (float)ScreenWidth();
-		shf = (float)ScreenHeight();
-
-		// Menu button dimensions
-		v2dOptionStart = { swf * 6.0f / 8.0f, shf * 15.0f / 16.0f };
-		v2dOptionWH = { swf * 2.0f / 8.0f, shf * 1.0f / 16.0f };
-		v2dOptionWH.x -= 5.0f; v2dOptionWH.y -= 5.0f;
-
-		fBarLength = swf * 2.0f / 3.0f;
-		v2dMemoryBarStart = { swf * 1.0f / 32.0f, shf * 1.0f / 3.0f };
-		v2dMemoryBarWH = { fBarLength, shf * 1.0f / 3.0f };
-
-
-		return true;
-	}
 	// Screen Height and Width
 	float swf; // ScreenWidth as float
 	float shf; // ScreenHeight as float
@@ -99,6 +89,10 @@ public:
 	// Flags
 	bool bHoveringOverOptions;
 
+	// Non-updating system info
+	std::string sProcArch;
+	DWORDLONG dwlPhysInstalledRam;
+
 	/**
 	* Position of text centered in screen.
 	*/
@@ -116,11 +110,38 @@ public:
 	olc::vf2d CenterTextPosInRect(const std::string& s, const olc::vf2d& start, const olc::vf2d& wh, uint32_t scale = 1)
 	{
 		return olc::vf2d(
-			0.5f * wh.x - (s.size() * 8 * scale) / 2.0f,
+			0.5f * wh.x - (float)(s.size() * 8 * scale) / 2.0f,
 			0.5f * wh.y - 3 * scale // should be 4 * scale but 3 looks better for some reason
 		) + start;
 	}
 
+	/**
+	* Creating things here.
+	*/
+	bool OnUserCreate() override
+	{
+		swf = (float)ScreenWidth();
+		shf = (float)ScreenHeight();
+
+		// Menu button dimensions
+		v2dOptionStart = { swf * 6.0f / 8.0f, shf * 15.0f / 16.0f };
+		v2dOptionWH = { swf * 2.0f / 8.0f, shf * 1.0f / 16.0f };
+		v2dOptionWH.x -= 5.0f; v2dOptionWH.y -= 5.0f;
+
+		// Memory bar dimensions
+		fBarLength = swf * 15.0f / 16.0f;
+		v2dMemoryBarStart = { swf * 1.0f / 32.0f, shf * 1.0f / 3.0f };
+		v2dMemoryBarWH = { fBarLength, shf * 1.0f / 3.0f };
+
+		// Set information that doesn't need to update
+		SYSTEM_INFO sys = MM::SysInfo();
+		sProcArch = MM::GetProcessorArchitectureStr(&sys);
+		dwlPhysInstalledRam = MM::PhysInstalledRam();
+
+
+		return true;
+	}
+	
 	/**
 	* Main program loop.
 	*/
@@ -152,7 +173,7 @@ public:
 		Clear(olc::VERY_DARK_BLUE);
 
 		// Memory Usage Bar
-		std::string sPerc = std::to_string((int)percMemUsed);
+		std::string sPerc = std::to_string((int)percMemUsed) + "%";
 		v2dMemoryBarWH.x = fBarLength * percMemUsed / 100.0f;
 		DrawRect(v2dMemoryBarStart, v2dMemoryBarWH);
 		DrawString(
