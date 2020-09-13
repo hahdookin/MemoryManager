@@ -1,5 +1,3 @@
-//---------------------------------
-
 #ifndef _MMSYSINFO_H
 #define _MMSYSINFO_H
 
@@ -40,7 +38,7 @@ std::string MM::GetProcessorArchitectureStr(SYSTEM_INFO* sysinfo)
 		type = "x64"; break;
 	case 12:
 		type = "ARM64"; break;
-	default:
+	default:  // Catches 0xffff
 		type = "Unknown"; break;
 	}
 	return type;
