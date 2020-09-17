@@ -141,8 +141,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MemoryManager.cpp" />
+    <ClCompile Include="olcPixelGameEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MMDrawingRoutines.h" />
     <ClInclude Include="MMSysInfo.h" />
     <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="Utils.h" />

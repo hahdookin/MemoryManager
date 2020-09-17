@@ -2,7 +2,10 @@
 #define _MMSYSINFO_H
 
 #include "Utils.h"
+
+#include "olcPixelGameEngine.h"
 #include <Windows.h>
+
 #include <string>
 
 // Forward declares (if need be)

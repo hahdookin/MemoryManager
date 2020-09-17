@@ -1,64 +1,18 @@
-//***************************
-// Fix for min/max macro conflict with algorithm library
-// Needs to be included first, then game engine (PGE uses std::min/max)
-#define NOMINMAX
-#include <algorithm>
-namespace Gdiplus
-{
-	using std::min;
-	using std::max;
-}
-#include "windows.h"
-// Thank you, https://stackoverflow.com/questions/4913922/possible-problems-with-nominmax-on-visual-c
-//***************************
-#define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
-
+// Project related includes
 #include "MMSysInfo.h"
+#include "MMDrawingRoutines.h"
 #include "Utils.h"
 
-#include <iostream>
+// Third party dependencies
+#include "olcPixelGameEngine.h"
+#include <Windows.h>
 
-constexpr float one16th = 1.0f / 16.0f;
-constexpr float two16th = 2.0f / 16.0f;
-constexpr float three16th = 3.0f / 16.0f;
-constexpr float four16th = 4.0f / 16.0f;
-constexpr float five16th = 5.0f / 16.0f;
-constexpr float six16th = 6.0f / 16.0f;
-constexpr float seven16th = 7.0f / 16.0f;
-constexpr float eight16th = 8.0f / 16.0f;
-constexpr float nine16th = 9.0f / 16.0f;
-constexpr float ten16th = 10.0f / 16.0f;
-constexpr float eleven16th = 11.0f / 16.0f;
-constexpr float twelve16th = 12.0f / 16.0f;
-constexpr float thirteen16th = 13.0f / 16.0f;
-constexpr float fourteen16th = 14.0f / 16.0f;
-constexpr float fifthteen16th = 15.0f / 16.0f;
+// Standard includes
+#include <iostream>
+#include <vector>
+
 
 constexpr float ratio = 1024.0f * 1024.0f * 1024.0f; // # of bytes in gigabyte
-
-// Might use this struct if need be
-struct Rect
-{
-	float x, y, w, h;
-};
-
-// Assume p1 and p2 connect to make a rectangle, check if particle in rect p1 p2
-bool InRect(const olc::vf2d& particle, const olc::vf2d& start, const olc::vf2d& sizeWH)
-{
-	using util::Between;
-	float x2 = start.x + sizeWH.x;
-	float y2 = start.y + sizeWH.y;
-	return (Between(particle.x, start.x, x2) && Between(particle.y, start.y, y2));
-}
-
-bool InRect(const olc::vf2d& particle, const Rect& rect)
-{
-	using util::Between;
-	float x2 = rect.x + rect.w;
-	float y2 = rect.y + rect.h;
-	return (Between(particle.x, rect.x, x2) && Between(particle.y, rect.y, y2));
-}
 
 
 class MemoryManager : public olc::PixelGameEngine
@@ -78,20 +32,19 @@ public:
 	std::string sZeroPercent = "0%";
 	std::string sOneHundredPercent = "100%";
 
-	// Points
-	olc::vf2d v2dOptionStart;
-	olc::vf2d v2dOptionWH;
-	olc::vf2d v2dMousePos = { 0.0f, 0.0f };
-	olc::vf2d v2dMemoryBarStart;
-	olc::vf2d v2dMemoryBarWH;
-	float fBarLength;
+	// Rects
+	Rect rectMenu;
+	Rect rectMemoryBar;
 
-	// Flags
-	bool bHoveringOverOptions;
+	olc::vf2d v2dMousePos = { 0.0f, 0.0f };
+	float fBarLength;
 
 	// Non-updating system info
 	std::string sProcArch;
 	DWORDLONG dwlPhysInstalledRam;
+
+	// Testing this data struct
+	VectorRect arrRectButtons;
 
 	/**
 	* Position of text centered in screen.
@@ -105,17 +58,6 @@ public:
 	}
 
 	/**
-	* Position of centered text within a rectangle.
-	*/
-	olc::vf2d CenterTextPosInRect(const std::string& s, const olc::vf2d& start, const olc::vf2d& wh, uint32_t scale = 1)
-	{
-		return olc::vf2d(
-			0.5f * wh.x - (float)(s.size() * 8 * scale) / 2.0f,
-			0.5f * wh.y - 3 * scale // should be 4 * scale but 3 looks better for some reason
-		) + start;
-	}
-
-	/**
 	* Creating things here.
 	*/
 	bool OnUserCreate() override
@@ -124,14 +66,25 @@ public:
 		shf = (float)ScreenHeight();
 
 		// Menu button dimensions
-		v2dOptionStart = { swf * 6.0f / 8.0f, shf * 15.0f / 16.0f };
-		v2dOptionWH = { swf * 2.0f / 8.0f, shf * 1.0f / 16.0f };
-		v2dOptionWH.x -= 5.0f; v2dOptionWH.y -= 5.0f;
+		rectMenu = { 
+			swf * 6.0f / 8.0f, 
+			shf * 15.0f / 16.0f,
+			(swf * 2.0f / 8.0f) - 5.0f,
+			(shf * 1.0f / 16.0f) - 5.0f
+		};
 
 		// Memory bar dimensions
 		fBarLength = swf * 15.0f / 16.0f;
-		v2dMemoryBarStart = { swf * 1.0f / 32.0f, shf * 1.0f / 3.0f };
-		v2dMemoryBarWH = { fBarLength, shf * 1.0f / 3.0f };
+		rectMemoryBar = {
+			swf * 1.0f / 32.0f, 
+			shf * 1.0f / 3.0f,
+			fBarLength, 
+			shf * 1.0f / 3.0f
+		};
+
+		// Add buttons to vector
+		arrRectButtons.push_back(rectMenu);
+		arrRectButtons.push_back(rectMemoryBar);
 
 		// Set information that doesn't need to update
 		SYSTEM_INFO sys = MM::SysInfo();
@@ -142,6 +95,7 @@ public:
 		return true;
 	}
 	
+	
 	/**
 	* Main program loop.
 	*/
@@ -149,14 +103,13 @@ public:
 	{
 		// Logic
 
-		// Check mouse location
-		bHoveringOverOptions = false;
+		// Get mouse location
 		v2dMousePos.x = (float)GetMouseX();
 		v2dMousePos.y = (float)GetMouseY();
-		if (InRect(v2dMousePos, v2dOptionStart, v2dOptionWH))
-		{
-			bHoveringOverOptions = true;
-		}
+
+		// Check if mouse hovering over any buttons
+		MM::CheckMouseInRect(v2dMousePos, arrRectButtons);
+
 
 		// Memory information
 		MEMORYSTATUSEX memInfo = MM::MemInfo();
@@ -167,42 +120,30 @@ public:
 		// CPU information
 		SYSTEM_INFO sysInfo = MM::SysInfo();
 
-
+		
 
 		// Drawing
 		Clear(olc::VERY_DARK_BLUE);
 
-		// Memory Usage Bar
+		// Update memory usage bar length
+		arrRectButtons[1].w = fBarLength * percMemUsed / 100.0f;
+
+		MM::DrawButtons(this, arrRectButtons);
+
+		// Need to make these DrawString's part of draw function
 		std::string sPerc = std::to_string((int)percMemUsed) + "%";
-		v2dMemoryBarWH.x = fBarLength * percMemUsed / 100.0f;
-		DrawRect(v2dMemoryBarStart, v2dMemoryBarWH);
 		DrawString(
-			CenterTextPosInRect(sPerc, v2dMemoryBarStart, v2dMemoryBarWH, 2U),
+			MM::CenterTextPosInRect(sPerc, arrRectButtons[1], 2U),
 			sPerc,
-			olc::WHITE,
+			(arrRectButtons[1].bMouseHovering ? olc::BLACK : olc::WHITE),
 			2U
 		);
 
-
-		if (bHoveringOverOptions)
-		{
-			if (GetMouse(0).bHeld)
-			{
-				FillRect(v2dOptionStart, v2dOptionWH, olc::DARK_GREY);
-			}
-			else
-			{
-				FillRect(v2dOptionStart, v2dOptionWH);
-			}
-		}
-		DrawRect(v2dOptionStart, v2dOptionWH, (bHoveringOverOptions ? olc::DARK_GREY : olc::WHITE));
-
-
 		std::string str = "MENUS";
 		DrawString(
-			CenterTextPosInRect(str, v2dOptionStart, v2dOptionWH),
+			MM::CenterTextPosInRect(str, arrRectButtons[0]),
 			str,
-			(bHoveringOverOptions ? olc::BLACK : olc::GREY)
+			(arrRectButtons[0].bMouseHovering ? olc::BLACK : olc::WHITE)
 		);
 
 
@@ -217,8 +158,12 @@ public:
 */
 int main(void)
 {
+	int32_t width = 256;
+	int32_t height = 240;
+	int32_t pixel_width = 1;
+	int32_t pixel_height = 1;
 	MemoryManager mm;
-	if (mm.Construct(256, 240, 1, 1))
+	if (mm.Construct(width, height, pixel_width, pixel_height))
 		mm.Start();
 
 	return 0;
