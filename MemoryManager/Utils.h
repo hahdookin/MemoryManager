@@ -1,7 +1,8 @@
 /**
 * Some utilities I find useful for my projects.
 *
-* Macros:
+* Macros: 
+*	Note: #define _UTILS_IGNORE_MACROS to remove these.
 *	- ARRAY_SIZE(arr) -> int
 *		- Returns length of static defined array
 *	- ASSERT(test, expected) -> void
@@ -16,7 +17,8 @@
 *		- Ends timer with id and prints time taken
 *
 * Functions:
-*
+*	- Between(float n, float lower, float upper) -> bool
+*		- Checks if lower <= n <= upper
 *
 * Classes/Structs:
 *	- Array<T>
@@ -35,6 +37,7 @@
 #include <string>
 
 // Macros
+#ifndef _UTILS_IGNORE_MARCOS
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #define ASSERT(test, expected)\
@@ -51,6 +54,7 @@ std::cout << "Timer" #id " start." << std::endl
 
 #define TIMEREND(id) auto _t_end_##id = std::chrono::high_resolution_clock::now();\
 std::cout << "Timer" #id ": " << std::chrono::duration_cast<std::chrono::milliseconds>(_t_end_##id - _t_start_##id).count() << "ms\n"
+#endif
 
 namespace util { // start util namespace
 

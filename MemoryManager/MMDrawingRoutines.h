@@ -17,6 +17,8 @@ struct Rect
 	// olc::Pixel col;
 };
 
+
+
 typedef std::vector<Rect> VectorRect;
 
 namespace MM
@@ -55,14 +57,10 @@ bool MM::CheckMouseInRect(const olc::vf2d& mouse, VectorRect& rects)
 // Probably take pointer to PGE and data set of flags
 void MM::DrawButtons(olc::PixelGameEngine* pge, const VectorRect& rects)
 {
-	// For each flag in flags
-	//		if flag is true
-	//			Draw highlighted button
-	//          ??? Profit
 	for (const Rect& rect : rects)
 	{
 		bool hovering = rect.bMouseHovering;
-		olc::Pixel border;
+		olc::Pixel border; // Might use this
 		if (hovering)
 		{
 			if (pge->GetMouse(0).bHeld)

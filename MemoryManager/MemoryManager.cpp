@@ -1,19 +1,14 @@
-// Project related includes
 #include "MMSysInfo.h"
 #include "MMDrawingRoutines.h"
 #include "Utils.h"
 
-// Third party dependencies
 #include "olcPixelGameEngine.h"
 #include <Windows.h>
 
-// Standard includes
 #include <iostream>
 #include <vector>
 
-
 constexpr float ratio = 1024.0f * 1024.0f * 1024.0f; // # of bytes in gigabyte
-
 
 class MemoryManager : public olc::PixelGameEngine
 {
@@ -110,7 +105,6 @@ public:
 		// Check if mouse hovering over any buttons
 		MM::CheckMouseInRect(v2dMousePos, arrRectButtons);
 
-
 		// Memory information
 		MEMORYSTATUSEX memInfo = MM::MemInfo();
 		DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
@@ -151,6 +145,7 @@ public:
 	}
 
 };
+
 
 
 /**
